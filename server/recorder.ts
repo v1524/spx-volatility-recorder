@@ -61,13 +61,13 @@ function isMarketOpen(): boolean {
   return totalMin >= 570 && totalMin < 960;
 }
 
-async function runCapture(): Promise<void> {
+async function runCapture(force = false): Promise<void> {
   if (isFetching) {
     console.log('[recorder] Skipping — previous capture still running');
     return;
   }
 
-  if (!isMarketOpen()) {
+  if (!force && !isMarketOpen()) {
     console.log('[recorder] Market is closed — skipping capture');
     return;
   }
@@ -143,14 +143,13 @@ export function stopRecording(): void {
 
 export async function captureNow(): Promise<void> {
   if (cronJob) {
-    // Reset the timer so we don't double-fire soon after
     cronJob.stop();
-    await runCapture();
+    await runCapture(true);
     const expr = cronExpression(settings.intervalMinutes);
     cronJob = cron.schedule(expr, runCapture);
     nextSnapshotAt = new Date(Date.now() + settings.intervalMinutes * 60 * 1000);
   } else {
-    await runCapture();
+    await runCapture(true);
   }
 }
 
